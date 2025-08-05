@@ -34,9 +34,6 @@ async function checkVisited(){
   return countries;
 }
 
-async function alreadyPresent(countryCode){
-  
-}
 
 app.get("/", async (req, res) => {
   //Write your code here.
@@ -64,37 +61,37 @@ app.get("/", async (req, res) => {
 
 
 app.post("/add",async(req,res)=>{
-  const countries=await checkVisited();
 
   const input=req.body["country"];
-
-  const result=await db.query("SELECT country_code FROM countries WHERE country_name ILIKE $1",[input]);
-
-  if(result.rows.length!==0){
-    const data=result.rows[0];
-    const countryCode=data.country_code;
-
-    const visited=await db.query("SELECT * FROM visited_countries WHERE country_code ILIKE $1",[countryCode]);
-
-    if(visited.rows.length>0){
-      return res.render("index.ejs",{
-      total:countries.length,
-      countries:countries,
-      error:"Already visited add another country",
-    });
-    }
+  try{
+    const result=await db.query("SELECT country_code FROM countries WHERE country_name ILIKE $1",[input]);
     
-    await db.query("INSERT INTO visited_countries (country_code) VALUES ($1)",[countryCode]);
-    res.redirect("/");
-
-  }else{
-    res.render("index.ejs",{
+      const data=result.rows[0];
+      const countryCode=data.country_code;
+      
+      try {
+        await db.query("INSERT INTO visited_countries (country_code) VALUES ($1)",[countryCode]);
+        res.redirect("/");
+      } catch (err) {
+        const countries=await checkVisited();
+        console.log(err);
+        res.render("index.ejs",{
+          error:"Country already added",
+          countries:countries,
+          total:countries.length,
+        });
+      }
+  }catch(err){
+      console.log(err);
+      const countries=await checkVisited();
+      res.render("index.ejs",{
+      error:"Country not found",
       total:countries.length,
       countries:countries,
-      error:"Country not found. Add another country",
     });
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
