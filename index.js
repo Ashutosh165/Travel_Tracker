@@ -13,13 +13,11 @@ app.use(express.static("public"));
 
 const dbpassword=process.env.DB_PASSWORD;
 
-const db=new pg.Client({
-  user: "postgres",
-  host: "localhost",
-  database: "world",
-  password: dbpassword,
-  port: 5432,
+const db = new pg.Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // required on Render
 });
+
 
 db.connect();
 
